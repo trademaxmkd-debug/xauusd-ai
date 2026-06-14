@@ -256,7 +256,7 @@ async function send(text){
         'X-Title':'XAUUSD Scalp AI'
       },
       body:JSON.stringify({
-        model:'deepseek/deepseek-r1:free',
+        model:'meta-llama/llama-3.3-70b-instruct:free',
         max_tokens:1000,
         messages:[{role:'system',content:SYSTEM},...history]
       })
