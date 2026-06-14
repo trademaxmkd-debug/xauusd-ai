@@ -252,7 +252,7 @@ async function send(text){
         'X-Title':'XAUUSD Scalp AI'
       },
       body:JSON.stringify({
-        model:'google/gemini-2.0-flash-exp:free',
+        model:'deepseek/deepseek-r1:free',
         max_tokens:1000,
         messages:[{role:'system',content:SYSTEM},...history]
       })
