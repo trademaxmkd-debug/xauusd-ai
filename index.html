@@ -5,11 +5,10 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
   <meta name="theme-color" content="#0a0a0f"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="XAUUSD AI"/>
-  <link rel="manifest" href="manifest.json"/>
-  <link rel="apple-touch-icon" href="icons/icon-192.png"/>
   <title>XAUUSD Скалп AI</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -134,73 +133,71 @@ const SYSTEM = `Ти си експертен AI трговски асистен�
 let history=[], memory=[], loading=false, priceData=null;
 const $=id=>document.getElementById(id);
 
-// ── PRICE: Yahoo Finance преку allorigins proxy (без CORS) ──
 async function fetchPrice() {
   setStatus('Вчитување…','#888',true);
-  $('ref-btn').textContent = '⏳';
+  $('ref-btn').textContent='⏳';
 
-  const sources = [
-    // 1. Yahoo Finance преку proxy
-    async () => {
-      const url = 'https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=1m&range=1d';
-      const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-      const r = await fetch(proxy);
-      const d = await r.json();
-      const meta = d.chart.result[0].meta;
-      const p = meta.regularMarketPrice;
-      const prev = meta.previousClose || meta.chartPreviousClose;
-      const ch = p - prev;
-      const chp = (ch / prev) * 100;
-      return {
-        price: p, bid: p - 0.3, ask: p + 0.3,
-        high: meta.regularMarketDayHigh || p,
-        low: meta.regularMarketDayLow || p,
-        change: ch, changePct: chp
-      };
-    },
-    // 2. Stooq
-    async () => {
-      const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent('https://stooq.com/q/l/?s=xauusd&f=sd2t2ohlcv&h&e=json')}`;
-      const r = await fetch(proxy);
-      const d = await r.json();
-      const q = d.symbols[0];
-      const p = parseFloat(q.close);
-      const o = parseFloat(q.open);
-      return {
-        price: p, bid: p-0.3, ask: p+0.3,
-        high: parseFloat(q.high), low: parseFloat(q.low),
-        change: p-o, changePct: ((p-o)/o)*100
-      };
-    }
+  // Проксиви кои работат со GitHub Pages
+  const proxies = [
+    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    url => `https://cors-anywhere.herokuapp.com/${url}`,
+    url => `https://thingproxy.freeboard.io/fetch/${url}`
   ];
 
-  for (const src of sources) {
+  const yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=1m&range=1d';
+
+  for (const proxy of proxies) {
     try {
-      const d = await src();
-      if (d && d.price > 100) {
-        priceData = d;
-        $('price-main').textContent = d.price.toFixed(2);
-        const ce=$('price-change');
-        ce.textContent=`${d.change>=0?'+':''}${d.change.toFixed(2)} (${d.changePct>=0?'+':''}${d.changePct.toFixed(2)}%)`;
-        ce.className=d.change>0?'up':d.change<0?'dn':'neu';
-        $('bid').textContent=d.bid.toFixed(2);
-        $('ask').textContent=d.ask.toFixed(2);
-        $('high').textContent=d.high.toFixed(2);
-        $('low').textContent=d.low.toFixed(2);
-        setStatus('● LIVE','#4ecf4e',false);
-        $('ref-btn').textContent = '🔄';
-        return;
-      }
+      const r = await fetch(proxy(yahooUrl), { signal: AbortSignal.timeout(5000) });
+      if (!r.ok) continue;
+      const d = await r.json();
+      const meta = d?.chart?.result?.[0]?.meta;
+      if (!meta?.regularMarketPrice) continue;
+      const p = meta.regularMarketPrice;
+      const prev = meta.previousClose || meta.chartPreviousClose || p;
+      const ch = p - prev;
+      showPrice({
+        price: p, bid: p-0.3, ask: p+0.3,
+        high: meta.regularMarketDayHigh||p,
+        low: meta.regularMarketDayLow||p,
+        change: ch, changePct: (ch/prev)*100
+      });
+      return;
     } catch(e) {}
   }
 
+  // Fallback: Stooq (понекогаш работи без proxy)
+  try {
+    const r = await fetch('https://stooq.com/q/l/?s=xauusd&f=sd2t2ohlcv&h&e=json', { signal: AbortSignal.timeout(5000) });
+    const d = await r.json();
+    const q = d?.symbols?.[0];
+    if (q?.close) {
+      const p=parseFloat(q.close), o=parseFloat(q.open);
+      showPrice({ price:p, bid:p-0.3, ask:p+0.3, high:parseFloat(q.high), low:parseFloat(q.low), change:p-o, changePct:((p-o)/o)*100 });
+      return;
+    }
+  } catch(e) {}
+
   setStatus('Не достапно','#666',false);
-  $('ref-btn').textContent = '🔄';
+  $('ref-btn').textContent='🔄';
+}
+
+function showPrice(d) {
+  priceData=d;
+  $('price-main').textContent=d.price.toFixed(2);
+  const ce=$('price-change');
+  ce.textContent=`${d.change>=0?'+':''}${d.change.toFixed(2)} (${d.changePct>=0?'+':''}${d.changePct.toFixed(2)}%)`;
+  ce.className=d.change>0?'up':d.change<0?'dn':'neu';
+  $('bid').textContent=d.bid.toFixed(2);
+  $('ask').textContent=d.ask.toFixed(2);
+  $('high').textContent=d.high.toFixed(2);
+  $('low').textContent=d.low.toFixed(2);
+  setStatus('● LIVE','#4ecf4e',false);
+  $('ref-btn').textContent='🔄';
 }
 
 function setStatus(t,c,b){ const el=$('ts'); el.textContent=t; el.style.cssText=`font-size:.6rem;color:${c};animation:${b?'blink 2s infinite':'none'}`; }
 
-// ── MEMORY ──
 function toggleMem(){ $('mem-panel').classList.toggle('open'); $('mem-btn').classList.toggle('on'); }
 function updateMemUI(){
   $('mem-btn').textContent=`🧠 ${memory.length}`;
@@ -209,7 +206,6 @@ function updateMemUI(){
 }
 function extractLesson(t){ const m=t.match(/ЛЕКЦИЈА[:\s]+([^\n.]+)/i); if(m){memory=[...memory.slice(-9),`✅ ${m[1].trim()}`];updateMemUI();} }
 
-// ── RENDER ──
 function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function md(text){
   let h='';
@@ -233,7 +229,6 @@ function addMsg(role,content,typing=false){
   return row;
 }
 
-// ── CHAT — OpenRouter директно (поддржува CORS) ──
 $('user-input').addEventListener('input',function(){ this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,90)+'px'; $('send-btn').disabled=!this.value.trim(); });
 $('user-input').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey&&window.innerWidth>600){e.preventDefault();if(!loading&&$('user-input').value.trim())send();} });
 
@@ -248,19 +243,18 @@ async function send(text){
   history.push({role:'user',content:msg+px+mx});
   loading=true; const tRow=addMsg('bot','',true);
   try{
-    const messages=[{role:'system',content:SYSTEM},...history];
     const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{
       method:'POST',
       headers:{
         'Content-Type':'application/json',
         'Authorization':`Bearer ${OPENROUTER_KEY}`,
-        'HTTP-Referer':'https://melodic-tartufo-882f98.netlify.app',
+        'HTTP-Referer':'https://trademaxmkd-debug.github.io',
         'X-Title':'XAUUSD Scalp AI'
       },
       body:JSON.stringify({
         model:'google/gemini-2.0-flash-exp:free',
         max_tokens:1000,
-        messages
+        messages:[{role:'system',content:SYSTEM},...history]
       })
     });
     const d=await r.json();
@@ -281,7 +275,6 @@ window.addEventListener('DOMContentLoaded',()=>{
   fetchPrice();
   setInterval(fetchPrice,60000);
 });
-if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
 </html>
