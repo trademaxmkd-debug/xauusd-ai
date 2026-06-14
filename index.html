@@ -115,7 +115,11 @@
 </div>
 
 <script>
-const OPENROUTER_KEY = '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';
+let OPENROUTER_KEY = localStorage.getItem('or_key') || '';
+if (!OPENROUTER_KEY) {
+  const k = prompt('Внеси го твојот OpenRouter API клуч (sk-or-...):');
+  if (k && k.startsWith('sk-or-')) { localStorage.setItem('or_key', k); OPENROUTER_KEY = k; }
+}
 
 const SYSTEM = `Ти си експертен AI трговски асистент за XAUUSD скалп тргување.
 Имаш пристап до live цена на злато која ти се праќа во секоја порака.
