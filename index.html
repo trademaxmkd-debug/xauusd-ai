@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+  <meta name="theme-color" content="#0a0a0f"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="XAUUSD AI"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="icons/icon-192.png"/>
+  <title>XAUUSD Скалп AI</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    :root{--gold:#f0c040;--bg:#0a0a0f;--bg3:#141820;--bg4:#0e1420;--border:#1e2535;--text:#d4d4d4;--dim:#888;--green:#4ecf4e;--red:#ef5555;--safe-top:env(safe-area-inset-top);--safe-bottom:env(safe-area-inset-bottom)}
+    body{font-family:-apple-system,'Inter',BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+    #header{background:linear-gradient(90deg,#1a1408,#1f1b0a,#1a1408);border-bottom:1px solid #f0c04030;padding:calc(10px + var(--safe-top)) 14px 10px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+    .logo{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#f0c040,#c8980a);display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:800;color:#1a1000;box-shadow:0 0 10px #f0c04040;flex-shrink:0}
+    .hdr-title{font-weight:700;font-size:.9rem;color:var(--gold)}
+    .hdr-sub{font-size:.65rem;color:var(--dim);letter-spacing:.06em;margin-top:1px}
+    #mem-btn{background:none;border:1px solid #333;border-radius:8px;padding:4px 10px;color:var(--dim);font-size:.7rem;cursor:pointer}
+    #mem-btn.on{border-color:#f0c04055;color:var(--gold);background:#f0c04015}
+    #ref-btn{background:none;border:1px solid #333;border-radius:8px;padding:4px 8px;color:var(--dim);font-size:.8rem;cursor:pointer}
+    #ticker{background:#0c1018;border-bottom:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;min-height:52px}
+    #price-main{font-size:1.5rem;font-weight:800;color:var(--gold);font-variant-numeric:tabular-nums}
+    #price-change{font-size:.75rem;font-weight:700;padding:2px 7px;border-radius:6px}
+    .up{color:#0a1a0a;background:var(--green)}.dn{color:#1a0a0a;background:var(--red)}.neu{color:#555;background:#1a1a1a}
+    .price-meta{display:flex;gap:10px;flex:1;justify-content:flex-end}
+    .meta-item{text-align:center}
+    .meta-label{font-size:.58rem;color:var(--dim);letter-spacing:.04em;margin-bottom:1px}
+    .meta-val{font-size:.76rem;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
+    #ts{font-size:.6rem;color:var(--dim);white-space:nowrap}
+    #mem-panel{background:#0a140b;border-bottom:1px solid #2a4a2a;padding:9px 14px;display:none;flex-shrink:0}
+    #mem-panel.open{display:block}
+    .mem-title{color:var(--green);font-weight:700;font-size:.76rem;margin-bottom:5px}
+    .mem-item{color:#a0d4a0;font-size:.74rem;margin-bottom:3px;padding-left:8px;border-left:2px solid #2a6a2a}
+    .mem-empty{color:#555;font-size:.74rem}
+    #messages{flex:1;overflow-y:auto;padding:12px 13px 6px;display:flex;flex-direction:column;gap:9px;-webkit-overflow-scrolling:touch}
+    .msg-row{display:flex;animation:fadein .22s ease}
+    .msg-row.user{justify-content:flex-end}
+    .bubble{max-width:88%;padding:9px 13px;font-size:.84rem;line-height:1.55;word-break:break-word}
+    .bubble.user{background:linear-gradient(135deg,#c8980a,#a07808);border-radius:16px 16px 4px 16px;color:#fff9e6}
+    .bubble.bot{background:var(--bg3);border:1px solid var(--border);border-radius:4px 16px 16px 16px}
+    .bubble h2{font-size:.98rem;color:var(--gold);margin:2px 0 6px}
+    .bubble h3{font-size:.86rem;color:#e8b830;margin:5px 0 3px}
+    .bubble p{margin:2px 0}.bubble li{margin:2px 0 2px 14px}
+    .sig{font-family:monospace;font-size:.81rem;color:#e0e0e0;margin:2px 0}
+    .bld{font-weight:700;color:var(--gold)}.sp{height:4px}
+    .dots{display:flex;gap:5px;align-items:center;padding:3px 0}
+    .dots span{width:7px;height:7px;border-radius:50%;background:var(--gold);opacity:.6;animation:pulse 1.2s infinite}
+    .dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}
+    #chips{padding:7px 13px 3px;display:flex;gap:5px;overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+    #chips::-webkit-scrollbar{display:none}
+    .chip{background:#1a1408;border:1px solid #f0c04032;border-radius:18px;padding:5px 12px;color:#c8a020;font-size:.73rem;white-space:nowrap;flex-shrink:0;cursor:pointer;-webkit-user-select:none}
+    .chip:active{background:#2a2010}
+    #input-bar{padding:7px 13px calc(8px + var(--safe-bottom));display:flex;gap:7px;align-items:flex-end;background:var(--bg);border-top:1px solid var(--border);flex-shrink:0}
+    #user-input{flex:1;background:var(--bg4);border:1px solid #1e2d45;border-radius:13px;padding:9px 13px;color:#e0e0e0;font-size:.85rem;resize:none;outline:none;font-family:inherit;line-height:1.45;max-height:90px;min-height:40px;overflow-y:auto;transition:border-color .2s}
+    #user-input:focus{border-color:#f0c04050}
+    #user-input::placeholder{color:#3a3a4a}
+    #send-btn{width:42px;height:42px;border-radius:12px;border:none;background:linear-gradient(135deg,#f0c040,#c8980a);color:#1a1000;font-size:1.1rem;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px #f0c04030}
+    #send-btn:disabled{opacity:.3;background:#1a1408;box-shadow:none}
+    #send-btn:active:not(:disabled){transform:scale(.95)}
+    #messages::-webkit-scrollbar{width:3px}
+    #messages::-webkit-scrollbar-thumb{background:#222;border-radius:3px}
+    @keyframes pulse{0%,100%{transform:scale(.8);opacity:.5}50%{transform:scale(1.2);opacity:1}}
+    @keyframes fadein{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+  </style>
+</head>
+<body>
+<div id="header">
+  <div style="display:flex;align-items:center;gap:9px">
+    <div class="logo">Au</div>
+    <div>
+      <div class="hdr-title">XAUUSD Скалп AI</div>
+      <div class="hdr-sub">ЗЛАТО · СКАЛП · M1–M15</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:6px">
+    <button id="ref-btn" onclick="fetchPrice()">🔄</button>
+    <button id="mem-btn" onclick="toggleMem()">🧠 0</button>
+  </div>
+</div>
+<div id="ticker">
+  <div>
+    <div id="price-main">—</div>
+    <div style="display:flex;align-items:center;gap:6px;margin-top:2px">
+      <span id="price-change" class="neu">—</span>
+      <span id="ts" style="animation:blink 2s infinite">Вчитување…</span>
+    </div>
+  </div>
+  <div class="price-meta">
+    <div class="meta-item"><div class="meta-label">BID</div><div class="meta-val" id="bid">—</div></div>
+    <div class="meta-item"><div class="meta-label">ASK</div><div class="meta-val" id="ask">—</div></div>
+    <div class="meta-item"><div class="meta-label">HIGH</div><div class="meta-val" id="high">—</div></div>
+    <div class="meta-item"><div class="meta-label">LOW</div><div class="meta-val" id="low">—</div></div>
+  </div>
+</div>
+<div id="mem-panel">
+  <div class="mem-title">🧠 Научени лекции:</div>
+  <div id="mem-list"><div class="mem-empty">Сè уште нема лекции.</div></div>
+</div>
+<div id="messages"></div>
+<div id="chips">
+  <div class="chip" onclick="chip(this)">📊 Анализирај ја моменталната цена</div>
+  <div class="chip" onclick="chip(this)">📍 Дај ми скалп влез сега</div>
+  <div class="chip" onclick="chip(this)">⏰ Дали е добра сесија сега?</div>
+  <div class="chip" onclick="chip(this)">📉 Анализирај ја мојата загуба</div>
+  <div class="chip" onclick="chip(this)">💰 Колкав лот да отворам?</div>
+  <div class="chip" onclick="chip(this)">🛑 Каде да го ставам стоп лосот?</div>
+</div>
+<div id="input-bar">
+  <textarea id="user-input" placeholder="Опиши трговија или прашај за XAUUSD…" rows="1"></textarea>
+  <button id="send-btn" onclick="send()" disabled>🚀</button>
+</div>
+
+<script>
+const OPENROUTER_KEY = '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';
+
+const SYSTEM = `Ти си експертен AI трговски асистент за XAUUSD скалп тргување.
+Имаш пристап до live цена на злато која ти се праќа во секоја порака.
+СКАЛП ПРАВИЛА: M1/M5/M15, ризик макс 1-2%, R:R мин 1:1.5
+Лондон 08-12 GMT, Њујорк 13-17 GMT. Избегнувај NFP/CPI/Fed.
+ФОРМАТ НА СИГНАЛ:
+📍 Влез: [цена]
+🛑 Стоп Лос: [цена] ([X] пипси)
+🎯 Тејк Профит: [цена] ([X] пипси)
+📊 R:R = 1:[X]
+💡 Причина: [објаснување]
+При анализа на трговија напиши: ЛЕКЦИЈА: [совет]
+Одговарај на македонски. Биди конкретен и краток.`;
+
+let history=[], memory=[], loading=false, priceData=null;
+const $=id=>document.getElementById(id);
+
+// ── PRICE: Yahoo Finance преку allorigins proxy (без CORS) ──
+async function fetchPrice() {
+  setStatus('Вчитување…','#888',true);
+  $('ref-btn').textContent = '⏳';
+
+  const sources = [
+    // 1. Yahoo Finance преку proxy
+    async () => {
+      const url = 'https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=1m&range=1d';
+      const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+      const r = await fetch(proxy);
+      const d = await r.json();
+      const meta = d.chart.result[0].meta;
+      const p = meta.regularMarketPrice;
+      const prev = meta.previousClose || meta.chartPreviousClose;
+      const ch = p - prev;
+      const chp = (ch / prev) * 100;
+      return {
+        price: p, bid: p - 0.3, ask: p + 0.3,
+        high: meta.regularMarketDayHigh || p,
+        low: meta.regularMarketDayLow || p,
+        change: ch, changePct: chp
+      };
+    },
+    // 2. Stooq
+    async () => {
+      const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent('https://stooq.com/q/l/?s=xauusd&f=sd2t2ohlcv&h&e=json')}`;
+      const r = await fetch(proxy);
+      const d = await r.json();
+      const q = d.symbols[0];
+      const p = parseFloat(q.close);
+      const o = parseFloat(q.open);
+      return {
+        price: p, bid: p-0.3, ask: p+0.3,
+        high: parseFloat(q.high), low: parseFloat(q.low),
+        change: p-o, changePct: ((p-o)/o)*100
+      };
+    }
+  ];
+
+  for (const src of sources) {
+    try {
+      const d = await src();
+      if (d && d.price > 100) {
+        priceData = d;
+        $('price-main').textContent = d.price.toFixed(2);
+        const ce=$('price-change');
+        ce.textContent=`${d.change>=0?'+':''}${d.change.toFixed(2)} (${d.changePct>=0?'+':''}${d.changePct.toFixed(2)}%)`;
+        ce.className=d.change>0?'up':d.change<0?'dn':'neu';
+        $('bid').textContent=d.bid.toFixed(2);
+        $('ask').textContent=d.ask.toFixed(2);
+        $('high').textContent=d.high.toFixed(2);
+        $('low').textContent=d.low.toFixed(2);
+        setStatus('● LIVE','#4ecf4e',false);
+        $('ref-btn').textContent = '🔄';
+        return;
+      }
+    } catch(e) {}
+  }
+
+  setStatus('Не достапно','#666',false);
+  $('ref-btn').textContent = '🔄';
+}
+
+function setStatus(t,c,b){ const el=$('ts'); el.textContent=t; el.style.cssText=`font-size:.6rem;color:${c};animation:${b?'blink 2s infinite':'none'}`; }
+
+// ── MEMORY ──
+function toggleMem(){ $('mem-panel').classList.toggle('open'); $('mem-btn').classList.toggle('on'); }
+function updateMemUI(){
+  $('mem-btn').textContent=`🧠 ${memory.length}`;
+  if(memory.length) $('mem-btn').classList.add('on');
+  $('mem-list').innerHTML=memory.length===0?'<div class="mem-empty">Сè уште нема лекции.</div>':memory.map(m=>`<div class="mem-item">${m}</div>`).join('');
+}
+function extractLesson(t){ const m=t.match(/ЛЕКЦИЈА[:\s]+([^\n.]+)/i); if(m){memory=[...memory.slice(-9),`✅ ${m[1].trim()}`];updateMemUI();} }
+
+// ── RENDER ──
+function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function md(text){
+  let h='';
+  for(const line of text.split('\n')){
+    if(line.startsWith('# ')) h+=`<h2>${line.slice(2)}</h2>`;
+    else if(line.startsWith('## ')) h+=`<h3>${line.slice(3)}</h3>`;
+    else if(/^\*\*(.+)\*\*$/.test(line)) h+=`<p class="bld">${line.slice(2,-2)}</p>`;
+    else if(line.startsWith('- ')||line.startsWith('* ')) h+=`<li>${line.slice(2).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')}</li>`;
+    else if(/^[📍🛑🎯📊⏰💡⚠️]/.test(line)) h+=`<div class="sig">${line}</div>`;
+    else if(line.trim()==='') h+='<div class="sp"></div>';
+    else h+=`<p>${line.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')}</p>`;
+  }
+  return h;
+}
+function addMsg(role,content,typing=false){
+  const row=document.createElement('div'); row.className=`msg-row ${role==='user'?'user':''}`;
+  const b=document.createElement('div'); b.className=`bubble ${role==='user'?'user':'bot'}`;
+  if(typing){b.innerHTML='<div class="dots"><span></span><span></span><span></span></div>';row.id='typing';}
+  else b.innerHTML=role==='user'?esc(content):md(content);
+  row.appendChild(b); $('messages').appendChild(row); $('messages').scrollTop=$('messages').scrollHeight;
+  return row;
+}
+
+// ── CHAT — OpenRouter директно (поддржува CORS) ──
+$('user-input').addEventListener('input',function(){ this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,90)+'px'; $('send-btn').disabled=!this.value.trim(); });
+$('user-input').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey&&window.innerWidth>600){e.preventDefault();if(!loading&&$('user-input').value.trim())send();} });
+
+async function send(text){
+  const msg=text||$('user-input').value.trim();
+  if(!msg||loading)return;
+  if(!text){$('user-input').value='';$('user-input').style.height='auto';}
+  $('send-btn').disabled=true;
+  const px=priceData?`\n\n[LIVE XAUUSD: ${priceData.price.toFixed(2)} | BID:${priceData.bid.toFixed(2)} ASK:${priceData.ask.toFixed(2)} HIGH:${priceData.high.toFixed(2)} LOW:${priceData.low.toFixed(2)} Δ${priceData.change>=0?'+':''}${priceData.change.toFixed(2)}(${priceData.changePct.toFixed(2)}%)]`:'\n\n[Live цена не е достапна]';
+  const mx=memory.length?`\n[ЛЕКЦИИ: ${memory.join(' | ')}]`:'';
+  addMsg('user',msg);
+  history.push({role:'user',content:msg+px+mx});
+  loading=true; const tRow=addMsg('bot','',true);
+  try{
+    const messages=[{role:'system',content:SYSTEM},...history];
+    const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':`Bearer ${OPENROUTER_KEY}`,
+        'HTTP-Referer':'https://melodic-tartufo-882f98.netlify.app',
+        'X-Title':'XAUUSD Scalp AI'
+      },
+      body:JSON.stringify({
+        model:'meta-llama/llama-3.1-8b-instruct:free',
+        max_tokens:1000,
+        messages
+      })
+    });
+    const d=await r.json();
+    const reply=d.choices?.[0]?.message?.content||'Нема одговор.';
+    tRow.remove(); addMsg('bot',reply);
+    history.push({role:'assistant',content:reply});
+    extractLesson(reply);
+  }catch(e){
+    tRow.remove(); addMsg('bot',`⚠️ Грешка: ${e.message}`);
+  }
+  loading=false; $('send-btn').disabled=!$('user-input').value.trim();
+}
+function chip(el){send(el.textContent.trim());}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  addMsg('bot','# 🥇 XAUUSD Скалп AI\n\nLive цената се вчитува…\n\n**Притисни копче или постави прашање!**');
+  history.push({role:'assistant',content:'Добредојде!'});
+  fetchPrice();
+  setInterval(fetchPrice,60000);
+});
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
